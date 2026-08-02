@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="*" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="*" />
     <PackageReference Include="FluentValidation" Version="*" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="*" />
     <PackageReference Include="MediatR" Version="*" />
