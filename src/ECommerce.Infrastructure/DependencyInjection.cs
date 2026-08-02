@@ -1,5 +1,6 @@
 using ECommerce.Application.Common.Interfaces;
 using ECommerce.Infrastructure.Persistence;
+using ECommerce.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,8 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(
             sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

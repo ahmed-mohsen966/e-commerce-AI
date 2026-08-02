@@ -1,3 +1,5 @@
+using ECommerce.Application.Common.Exceptions;
+using ECommerce.Domain.Common;
 using FluentValidation;
 using System.Net;
 using System.Text.Json;
@@ -27,6 +29,18 @@ public sealed class ExceptionHandlingMiddleware
             context.Response.ContentType = "application/json";
             var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { errors }));
+        }
+        catch (NotFoundException ex)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
+        }
+        catch (DomainException ex)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
         }
         catch (Exception ex)
         {
