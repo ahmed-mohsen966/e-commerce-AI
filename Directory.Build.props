@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Silence AutoMapper DI-extension / base package version skew warning -->
+    <NoWarn>$(NoWarn);NU1608</NoWarn>
+  </PropertyGroup>
+</Project>
