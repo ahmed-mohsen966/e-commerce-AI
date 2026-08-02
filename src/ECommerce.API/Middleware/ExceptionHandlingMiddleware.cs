@@ -57,6 +57,10 @@ public sealed class ExceptionHandlingMiddleware
             context, StatusCodes.Status404NotFound, "Resource not found.", notFoundException.Message,
             "https://tools.ietf.org/html/rfc7231#section-6.5.4"),
 
+        AuthenticationException authenticationException => BuildProblem(
+            context, StatusCodes.Status401Unauthorized, "Authentication failed.", authenticationException.Message,
+            "https://tools.ietf.org/html/rfc7235#section-3.1"),
+
         DomainException domainException => BuildProblem(
             context, StatusCodes.Status400BadRequest, "Business rule violation.", domainException.Message,
             "https://tools.ietf.org/html/rfc7231#section-6.5.1"),

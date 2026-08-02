@@ -1,10 +1,15 @@
 using System.Reflection;
+using System.Text.Json;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using ECommerce.API.Configuration;
 using ECommerce.API.Middleware;
 using ECommerce.Application;
 using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -28,6 +33,46 @@ try
     // ── API infrastructure ───────────────────────────────────────────────────
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddAuthorization();
+
+    // Give framework-level 401/403 (missing/invalid token, wrong role) the same
+    // ProblemDetails shape as everything ExceptionHandlingMiddleware produces —
+    // these never throw, so the middleware never sees them.
+    builder.Services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/problem+json";
+                var problem = new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Unauthorized.",
+                    Detail = "A valid access token is required to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7235#section-3.1",
+                    Instance = context.Request.Path,
+                };
+                await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+            },
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/problem+json";
+                var problem = new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Forbidden.",
+                    Detail = "You do not have permission to access this resource.",
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3",
+                    Instance = context.Request.Path,
+                };
+                await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+            },
+        };
+    });
 
     builder.Services.AddApiVersioning(options =>
         {
@@ -52,6 +97,26 @@ try
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
         if (File.Exists(xmlPath))
             c.IncludeXmlComments(xmlPath);
+
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Enter 'Bearer' followed by a space and your access token.",
+        });
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
+                },
+                Array.Empty<string>()
+            },
+        });
     });
 
     builder.Services.AddCors(options =>
@@ -64,6 +129,11 @@ try
 
     if (app.Environment.IsDevelopment())
     {
+        using (var scope = app.Services.CreateScope())
+        {
+            await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+        }
+
         var apiVersionDescriptionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
         app.UseSwagger();
@@ -82,6 +152,7 @@ try
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
     app.UseCors(AngularDevCorsPolicy);
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 

@@ -1,8 +1,10 @@
 using Asp.Versioning;
+using ECommerce.Application.Common.Constants;
 using ECommerce.Application.Common.Models;
 using ECommerce.Application.Features.Products.Commands;
 using ECommerce.Application.Features.Products.Dtos;
 using ECommerce.Application.Features.Products.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers.V1;
@@ -19,6 +21,7 @@ public sealed class ProductsController : ApiControllerBase
     /// <param name="query">Pagination, filtering, and sorting parameters.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(PaginatedList<ProductListItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedList<ProductListItemDto>>> GetList(
         [FromQuery] GetProductsListQuery query,
@@ -33,6 +36,7 @@ public sealed class ProductsController : ApiControllerBase
     /// <param name="id">The product id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -46,8 +50,11 @@ public sealed class ProductsController : ApiControllerBase
     /// <param name="command">The product to create.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost]
+    [Authorize(Roles = IdentityRoles.Admin)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Guid>> Create(CreateProductCommand command, CancellationToken cancellationToken)
     {
@@ -62,8 +69,11 @@ public sealed class ProductsController : ApiControllerBase
     /// <param name="command">The updated product data.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = IdentityRoles.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(Guid id, UpdateProductCommand command, CancellationToken cancellationToken)
     {
@@ -80,7 +90,10 @@ public sealed class ProductsController : ApiControllerBase
     /// <param name="id">The product id.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = IdentityRoles.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

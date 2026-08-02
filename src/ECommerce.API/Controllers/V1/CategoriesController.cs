@@ -1,7 +1,9 @@
 using Asp.Versioning;
+using ECommerce.Application.Common.Constants;
 using ECommerce.Application.Features.Categories.Commands;
 using ECommerce.Application.Features.Categories.Dtos;
 using ECommerce.Application.Features.Categories.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers.V1;
@@ -17,6 +19,7 @@ public sealed class CategoriesController : ApiControllerBase
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(IReadOnlyCollection<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<CategoryDto>>> GetList(CancellationToken cancellationToken)
     {
@@ -29,8 +32,11 @@ public sealed class CategoriesController : ApiControllerBase
     /// <param name="command">The category to create.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     [HttpPost]
+    [Authorize(Roles = IdentityRoles.Admin)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Guid>> Create(CreateCategoryCommand command, CancellationToken cancellationToken)
     {
