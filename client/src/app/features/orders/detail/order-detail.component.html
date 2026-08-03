@@ -1,0 +1,54 @@
+@if (loading()) {
+  <p class="text-sm text-gray-500">Loading order…</p>
+} @else {
+  @if (order(); as order) {
+    <div class="flex flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Order {{ order.id.slice(0, 8) }}</h1>
+          <p class="text-sm text-gray-500">{{ order.orderDate | date: 'medium' }}</p>
+        </div>
+        <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+          {{ order.status }}
+        </span>
+      </div>
+
+      @if (order.cancellationReason) {
+        <p class="text-sm text-red-600">Cancelled: {{ order.cancellationReason }}</p>
+      }
+
+      <div class="overflow-hidden rounded-lg bg-white shadow ring-1 ring-black/5">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Product</th>
+              <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">SKU</th>
+              <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Quantity</th>
+              <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Unit price</th>
+              <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Line total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            @for (item of order.items; track item.productVariantId) {
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">{{ item.productName }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ item.sku }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ item.quantity }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">
+                  {{ item.unitPriceAmount | number: '1.2-2' }} {{ item.unitPriceCurrency }}
+                </td>
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                  {{ item.lineTotalAmount | number: '1.2-2' }} {{ item.lineTotalCurrency }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="flex justify-end text-lg font-semibold text-gray-900">
+        Total: {{ order.totalAmount | number: '1.2-2' }} {{ order.totalCurrency }}
+      </p>
+    </div>
+  }
+}

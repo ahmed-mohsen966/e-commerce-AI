@@ -1,0 +1,132 @@
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2 flex flex-col gap-6">
+    <h1 class="text-2xl font-bold text-gray-900">Checkout</h1>
+
+    <app-card title="Shipping address">
+      <form [formGroup]="shippingForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700">Address line 1</label>
+          <input
+            formControlName="line1"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700">Address line 2 (optional)</label>
+          <input
+            formControlName="line2"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">City</label>
+          <input
+            formControlName="city"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">State</label>
+          <input
+            formControlName="state"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Postal code</label>
+          <input
+            formControlName="postalCode"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Country</label>
+          <input
+            formControlName="country"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+      </form>
+    </app-card>
+
+    <label class="flex items-center gap-2 text-sm text-gray-700">
+      <input
+        type="checkbox"
+        [checked]="sameAsShipping()"
+        (change)="toggleSameAsShipping($any($event.target).checked)"
+        class="rounded border-gray-300"
+      />
+      Billing address is the same as shipping
+    </label>
+
+    @if (!sameAsShipping()) {
+      <app-card title="Billing address">
+        <form [formGroup]="billingForm" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Address line 1</label>
+            <input
+              formControlName="line1"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Address line 2 (optional)</label>
+            <input
+              formControlName="line2"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">City</label>
+            <input
+              formControlName="city"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">State</label>
+            <input
+              formControlName="state"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Postal code</label>
+            <input
+              formControlName="postalCode"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Country</label>
+            <input
+              formControlName="country"
+              class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+        </form>
+      </app-card>
+    }
+  </div>
+
+  <div>
+    <app-card title="Order summary">
+      @if (cartService.cart(); as cart) {
+        <ul class="flex flex-col gap-2 text-sm text-gray-600">
+          @for (item of cart.items; track item.productVariantId) {
+            <li class="flex justify-between">
+              <span>Qty {{ item.quantity }}</span>
+              <span>{{ item.lineTotalAmount | number: '1.2-2' }} {{ item.lineTotalCurrency }}</span>
+            </li>
+          }
+        </ul>
+        <p class="mt-4 flex justify-between border-t border-gray-200 pt-4 text-base font-semibold text-gray-900">
+          <span>Total</span>
+          <span>{{ cart.totalAmount | number: '1.2-2' }} {{ cart.totalCurrency }}</span>
+        </p>
+      }
+
+      <app-button class="mt-4 w-full" [loading]="placingOrder()" (click)="placeOrder()">Place order</app-button>
+    </app-card>
+  </div>
+</div>

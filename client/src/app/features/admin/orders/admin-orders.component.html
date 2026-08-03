@@ -1,0 +1,86 @@
+<div class="flex flex-col gap-6">
+  <h1 class="text-2xl font-bold text-gray-900">Manage orders</h1>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700">Filter by status</label>
+    <select
+      [(ngModel)]="statusFilter"
+      (ngModelChange)="onFilterChange()"
+      class="mt-1 rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+    >
+      <option value="">All statuses</option>
+      @for (status of statuses; track status) {
+        <option [value]="status">{{ status }}</option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-gray-500">Loading orders…</p>
+  } @else if (result() && result()!.items.length === 0) {
+    <p class="text-sm text-gray-500">No orders match this filter.</p>
+  } @else if (result()) {
+    <div class="overflow-hidden rounded-lg bg-white shadow ring-1 ring-black/5">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Date</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Total</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Status</th>
+            <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-gray-500">Cancellation reason</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          @for (order of result()!.items; track order.id) {
+            <tr>
+              <td class="px-4 py-3 text-sm text-gray-500">{{ order.orderDate | date: 'medium' }}</td>
+              <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                {{ order.totalAmount | number: '1.2-2' }} {{ order.totalCurrency }}
+              </td>
+              <td class="px-4 py-3">
+                <select
+                  [ngModel]="statusFor(order)"
+                  (ngModelChange)="onStatusChange(order, $event)"
+                  class="rounded-md border-0 px-2 py-1 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                >
+                  @for (status of statuses; track status) {
+                    <option [value]="status">{{ status }}</option>
+                  }
+                </select>
+              </td>
+              <td class="px-4 py-3">
+                @if (statusFor(order) === 'Cancelled') {
+                  <input
+                    [ngModel]="reasonFor(order)"
+                    (ngModelChange)="onReasonChange(order, $event)"
+                    placeholder="Reason"
+                    class="w-full rounded-md border-0 px-2 py-1 text-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                  />
+                }
+              </td>
+              <td class="px-4 py-3 text-right">
+                <app-button
+                  size="sm"
+                  [loading]="savingOrderId() === order.id"
+                  [disabled]="statusFor(order) === order.status && !reasonFor(order)"
+                  (click)="saveStatus(order)"
+                >
+                  Save
+                </app-button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      [pageNumber]="result()!.pageNumber"
+      [totalPages]="result()!.totalPages"
+      [hasPreviousPage]="result()!.hasPreviousPage"
+      [hasNextPage]="result()!.hasNextPage"
+      (pageChange)="onPageChange($event)"
+    ></app-pagination>
+  }
+</div>

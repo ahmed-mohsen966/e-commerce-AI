@@ -1,0 +1,74 @@
+<div class="flex flex-col gap-6">
+  <div class="flex flex-wrap items-end gap-4">
+    <div>
+      <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+      <select
+        id="category"
+        [(ngModel)]="categoryId"
+        (ngModelChange)="onFiltersChange()"
+        class="mt-1 rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+      >
+        <option value="">All categories</option>
+        @for (category of categories(); track category.id) {
+          <option [value]="category.id">{{ category.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label for="sortBy" class="block text-sm font-medium text-gray-700">Sort by</label>
+      <select
+        id="sortBy"
+        [(ngModel)]="sortBy"
+        (ngModelChange)="onFiltersChange()"
+        class="mt-1 rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+      >
+        <option value="CreatedAt">Newest</option>
+        <option value="Name">Name</option>
+        <option value="BasePrice">Price</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="sortDescending" class="block text-sm font-medium text-gray-700">Direction</label>
+      <select
+        id="sortDescending"
+        [ngModel]="sortDescending"
+        (ngModelChange)="sortDescending = $event; onFiltersChange()"
+        class="mt-1 rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+      >
+        <option [ngValue]="true">Descending</option>
+        <option [ngValue]="false">Ascending</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-gray-500">Loading products…</p>
+  } @else if (result() && result()!.items.length === 0) {
+    <p class="text-sm text-gray-500">No products match these filters.</p>
+  } @else if (result()) {
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (product of result()!.items; track product.id) {
+        <a [routerLink]="['/products', product.id]">
+          <app-card [title]="product.name">
+            <p class="text-sm text-gray-500">
+              {{ product.basePriceAmount | number: '1.2-2' }} {{ product.basePriceCurrency }}
+            </p>
+            @if (!product.isActive) {
+              <p class="mt-1 text-xs font-medium text-amber-600">Inactive</p>
+            }
+          </app-card>
+        </a>
+      }
+    </div>
+
+    <app-pagination
+      [pageNumber]="result()!.pageNumber"
+      [totalPages]="result()!.totalPages"
+      [hasPreviousPage]="result()!.hasPreviousPage"
+      [hasNextPage]="result()!.hasNextPage"
+      (pageChange)="onPageChange($event)"
+    ></app-pagination>
+  }
+</div>

@@ -1,0 +1,192 @@
+<div class="flex flex-col gap-6">
+  <h1 class="text-2xl font-bold text-gray-900">Manage products</h1>
+
+  <app-card title="Create product">
+    <form [formGroup]="createForm" (ngSubmit)="createProduct()" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Name</label>
+        <input
+          formControlName="name"
+          class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+        />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea
+          formControlName="description"
+          rows="2"
+          class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+        ></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Category</label>
+        <select
+          formControlName="categoryId"
+          class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+        >
+          <option value="" disabled>Select a category</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-700">Base price</label>
+          <input
+            type="number"
+            formControlName="basePriceAmount"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+        <div class="w-24">
+          <label class="block text-sm font-medium text-gray-700">Currency</label>
+          <input
+            formControlName="basePriceCurrency"
+            class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+          />
+        </div>
+      </div>
+      <div class="sm:col-span-2">
+        <app-button type="submit" [loading]="creating()">Create product</app-button>
+      </div>
+    </form>
+  </app-card>
+
+  @if (loading()) {
+    <p class="text-sm text-gray-500">Loading products…</p>
+  } @else {
+    <div class="flex flex-col gap-3">
+      @for (product of products(); track product.id) {
+        <app-card>
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="font-semibold text-gray-900">{{ product.name }}</p>
+              <p class="text-sm text-gray-500">
+                {{ categoryName(product.categoryId) }} ·
+                {{ product.basePriceAmount | number: '1.2-2' }} {{ product.basePriceCurrency }}
+                @if (!product.isActive) {
+                  · <span class="font-medium text-amber-600">Inactive</span>
+                }
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <app-button variant="secondary" size="sm" (click)="startAddVariant(product)">Add variant</app-button>
+              <app-button variant="secondary" size="sm" (click)="startEdit(product)">Edit</app-button>
+              <app-button variant="danger" size="sm" (click)="deleteProduct(product)">Delete</app-button>
+            </div>
+          </div>
+
+          @if (editingProductId() === product.id) {
+            <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="mt-4 grid grid-cols-1 gap-3 border-t pt-4 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Name</label>
+                <input
+                  formControlName="name"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  formControlName="description"
+                  rows="2"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                ></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Category</label>
+                <select
+                  formControlName="categoryId"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                >
+                  @for (category of categories(); track category.id) {
+                    <option [value]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <label class="block text-sm font-medium text-gray-700">Base price</label>
+                  <input
+                    type="number"
+                    formControlName="basePriceAmount"
+                    class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                  />
+                </div>
+                <div class="w-24">
+                  <label class="block text-sm font-medium text-gray-700">Currency</label>
+                  <input
+                    formControlName="basePriceCurrency"
+                    class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                  />
+                </div>
+              </div>
+              <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" formControlName="isActive" class="rounded border-gray-300" />
+                Active
+              </label>
+              <div class="flex gap-2 sm:col-span-2">
+                <app-button type="submit" size="sm" [loading]="savingEdit()">Save</app-button>
+                <app-button variant="secondary" size="sm" (click)="cancelEdit()">Cancel</app-button>
+              </div>
+            </form>
+          }
+
+          @if (variantFormProductId() === product.id) {
+            <form [formGroup]="variantForm" (ngSubmit)="saveVariant()" class="mt-4 grid grid-cols-2 gap-3 border-t pt-4 sm:grid-cols-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">SKU</label>
+                <input
+                  formControlName="sku"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Size</label>
+                <input
+                  formControlName="size"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Color</label>
+                <input
+                  formControlName="color"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Price</label>
+                <input
+                  type="number"
+                  formControlName="priceAmount"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Currency</label>
+                <input
+                  formControlName="priceCurrency"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Stock</label>
+                <input
+                  type="number"
+                  formControlName="stockQuantity"
+                  class="mt-1 block w-full rounded-md border-0 px-3 py-2 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600"
+                />
+              </div>
+              <div class="col-span-2 flex gap-2 sm:col-span-3">
+                <app-button type="submit" size="sm" [loading]="savingVariant()">Add variant</app-button>
+                <app-button variant="secondary" size="sm" (click)="cancelAddVariant()">Cancel</app-button>
+              </div>
+            </form>
+          }
+        </app-card>
+      }
+    </div>
+  }
+</div>
