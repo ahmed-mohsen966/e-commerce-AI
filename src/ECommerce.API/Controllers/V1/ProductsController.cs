@@ -100,4 +100,30 @@ public sealed class ProductsController : ApiControllerBase
         await Mediator.Send(new DeleteProductCommand(id), cancellationToken);
         return NoContent();
     }
+
+    /// <summary>
+    /// Adds a new variant (SKU/size/color/price/stock) to a product.
+    /// </summary>
+    /// <param name="id">The product id from the route.</param>
+    /// <param name="request">The variant to create.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpPost("{id:guid}/variants")]
+    [Authorize(Roles = IdentityRoles.Admin)]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<Guid>> CreateVariant(
+        Guid id, CreateProductVariantRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CreateProductVariantCommand(
+            id, request.Sku, request.Size, request.Color, request.PriceAmount, request.PriceCurrency, request.StockQuantity);
+        var variantId = await Mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id }, variantId);
+    }
 }
+
+public sealed record CreateProductVariantRequest(
+    string Sku, string Size, string Color, decimal PriceAmount, string PriceCurrency, int StockQuantity);

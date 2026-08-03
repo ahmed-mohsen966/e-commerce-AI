@@ -8,27 +8,14 @@ using Microsoft.Extensions.Options;
 
 namespace ECommerce.Infrastructure.Identity;
 
-public sealed class IdentityService : IIdentityService
+public sealed class IdentityService(
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
+    ApplicationDbContext context,
+    IJwtTokenGenerator tokenGenerator,
+    IOptions<JwtSettings> jwtOptions) : IIdentityService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly ApplicationDbContext _context;
-    private readonly IJwtTokenGenerator _tokenGenerator;
-    private readonly JwtSettings _jwtSettings;
-
-    public IdentityService(
-        UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
-        ApplicationDbContext context,
-        IJwtTokenGenerator tokenGenerator,
-        IOptions<JwtSettings> jwtOptions)
-    {
-        _userManager = userManager;
-        _signInManager = signInManager;
-        _context = context;
-        _tokenGenerator = tokenGenerator;
-        _jwtSettings = jwtOptions.Value;
-    }
+    private readonly JwtSettings _jwtSettings = jwtOptions.Value;
 
     public async Task<AuthOperationResult> RegisterAsync(
         string email, string password, Guid customerId, CancellationToken cancellationToken = default)
@@ -40,14 +27,14 @@ public sealed class IdentityService : IIdentityService
             CustomerId = customerId,
         };
 
-        var createResult = await _userManager.CreateAsync(user, password);
+        var createResult = await userManager.CreateAsync(user, password);
         if (!createResult.Succeeded)
         {
             return AuthOperationResult.Failure(
                 createResult.Errors.Select(e => new IdentityOperationError(e.Code, e.Description)));
         }
 
-        await _userManager.AddToRoleAsync(user, IdentityRoles.Customer);
+        await userManager.AddToRoleAsync(user, IdentityRoles.Customer);
 
         var auth = await IssueTokensAsync(user, cancellationToken);
         return AuthOperationResult.Success(auth);
@@ -59,11 +46,11 @@ public sealed class IdentityService : IIdentityService
         var invalidCredentials = AuthOperationResult.Failure(
             new IdentityOperationError("InvalidCredentials", "Invalid email or password."));
 
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await userManager.FindByEmailAsync(email);
         if (user is null)
             return invalidCredentials;
 
-        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
+        var signInResult = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
         if (!signInResult.Succeeded)
             return invalidCredentials;
 
@@ -77,13 +64,13 @@ public sealed class IdentityService : IIdentityService
         var invalidToken = AuthOperationResult.Failure(
             new IdentityOperationError("InvalidToken", "Invalid or expired refresh token."));
 
-        var existing = await _context.Set<RefreshToken>()
+        var existing = await context.Set<RefreshToken>()
             .FirstOrDefaultAsync(t => t.Token == refreshToken, cancellationToken);
 
         if (existing is null || !existing.IsActive)
             return invalidToken;
 
-        var user = await _userManager.FindByIdAsync(existing.UserId.ToString());
+        var user = await userManager.FindByIdAsync(existing.UserId.ToString());
         if (user is null)
             return invalidToken;
 
@@ -96,17 +83,17 @@ public sealed class IdentityService : IIdentityService
     public async Task<IdentityOperationOutcome> AssignRoleAsync(
         string email, string role, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await userManager.FindByEmailAsync(email);
         if (user is null)
         {
             return IdentityOperationOutcome.Failure(
                 new IdentityOperationError("UserNotFound", $"No user found with email '{email}'."));
         }
 
-        if (await _userManager.IsInRoleAsync(user, role))
+        if (await userManager.IsInRoleAsync(user, role))
             return IdentityOperationOutcome.Success();
 
-        var result = await _userManager.AddToRoleAsync(user, role);
+        var result = await userManager.AddToRoleAsync(user, role);
         if (!result.Succeeded)
         {
             return IdentityOperationOutcome.Failure(
@@ -119,10 +106,10 @@ public sealed class IdentityService : IIdentityService
     private async Task<AuthResult> IssueTokensAsync(
         ApplicationUser user, CancellationToken cancellationToken, RefreshToken? replacing = null)
     {
-        var roles = await _userManager.GetRolesAsync(user);
-        var (accessToken, accessExpiresAtUtc) = _tokenGenerator.GenerateAccessToken(user, roles);
+        var roles = await userManager.GetRolesAsync(user);
+        var (accessToken, accessExpiresAtUtc) = tokenGenerator.GenerateAccessToken(user, roles);
 
-        var refreshTokenValue = _tokenGenerator.GenerateRefreshToken();
+        var refreshTokenValue = tokenGenerator.GenerateRefreshToken();
         var refreshExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays);
 
         var refreshTokenEntity = new RefreshToken
@@ -135,8 +122,8 @@ public sealed class IdentityService : IIdentityService
         if (replacing is not null)
             replacing.ReplacedByToken = refreshTokenValue;
 
-        _context.Set<RefreshToken>().Add(refreshTokenEntity);
-        await _context.SaveChangesAsync(cancellationToken);
+        context.Set<RefreshToken>().Add(refreshTokenEntity);
+        await context.SaveChangesAsync(cancellationToken);
 
         return new AuthResult(accessToken, accessExpiresAtUtc, refreshTokenValue, refreshExpiresAtUtc);
     }

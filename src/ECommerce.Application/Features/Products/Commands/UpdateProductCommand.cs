@@ -24,9 +24,7 @@ public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductC
 
     public async Task Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
-        var repository = _unitOfWork.Repository<Product>();
-
-        var product = await repository.GetByIdAsync(request.Id, cancellationToken)
+        var product = await _unitOfWork.Repository<Product>().GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Product), request.Id);
 
         if (request.CategoryId != product.CategoryId)
@@ -48,7 +46,7 @@ public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductC
         else
             product.Deactivate();
 
-        repository.Update(product);
+        // product is already tracked (loaded above); no Update() call needed.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

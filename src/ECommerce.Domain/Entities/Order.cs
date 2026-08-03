@@ -61,7 +61,7 @@ public class Order : BaseEntity
             order._items.Add(new OrderItem(order.Id, line.ProductVariantId, line.ProductName, line.Sku, line.Quantity, line.UnitPrice));
         }
 
-        order.AddDomainEvent(new OrderPlacedEvent(order.Id, order.CustomerId, order.TotalAmount));
+        order.AddDomainEvent(new OrderPlacedEvent(order.Id, order.CustomerId, order.TotalAmount, lines));
 
         return order;
     }
